@@ -13,8 +13,8 @@
 // are untouched by every handler here. The master-list cache
 // (couponrun-master-v1, owned by js/data.js) is also untouched: activate
 // only deletes couponrun-shell-* caches.
-const SHELL = 'couponrun-shell-v3';
-const SHELL_FILES = ['./', './index.html', './css/app.css', './js/app.js', './js/logic.js', './js/store.js', './js/data.js', './manifest.webmanifest', './assets/icons/icon-512.png', './assets/icons/icon-rc-512.png', './assets/icons/icon.svg'];
+const SHELL = 'couponrun-shell-v4';
+const SHELL_FILES = ['./', './index.html', './css/app.css', './js/app.js', './js/logic.js', './js/store.js', './js/data.js', './manifest.webmanifest', './assets/icons/icon-512.png', './assets/icons/icon-rc-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(SHELL).then(c => c.addAll(SHELL_FILES).catch(() => {})).then(() => self.skipWaiting()));
 });
