@@ -1,15 +1,17 @@
 import * as L from './logic.js';
 import { store, loadView, saveView, saveBack, loadBack, uid } from './store.js';
 import { fetchMaster, readCachedMaster, isInstalled, INSTALL_TEXT } from './data.js';
+import './version.js'; // Single version source; sets self.APP_VERSION / self.SHELL_NAME.
 
-// App version shown on the home page. Bump on every release.
-const APP_VERSION = '1.0.0';
 
 // Gambling-problem notice, verbatim as supplied by the curator (2026-11-07).
 // Shown on the home page and below the Disclaimer in coupon detail.
 const HELP_TEXT = 'Please gamble responsibly, and only with money you can afford to lose.\nGambling Problem? Call 1-800-GAMBLER.';
 // Render the two lines with a line break (escapeHtml alone would collapse the newline).
 const helpHtml = () => L.escapeHtml(HELP_TEXT).replace(/\n/g, '<br>');
+// Same for the install text: its line breaks must survive in alert boxes.
+// (title attributes and alert() keep the raw text — they handle newlines themselves.)
+const installHtml = () => L.escapeHtml(INSTALL_TEXT).replace(/\n/g, '<br>');
 const DISCLAIMER = 'This coupon information is crowdsourced. It may change at any time, or may even be incorrect. The author is not liable for any discrepancies. Always confirm the offer at the venue before redeeming.';
 // Requirements UC3 asks for a disclaimer to that effect; final legal wording is an open question (requirements §11), so this plain wording is labelled as such in the detail view note.
 
@@ -54,7 +56,7 @@ function hidePane() {
 }
 let lastPaneGroup = null;
 function gatingBanner() {
-  return installed ? '' : `<div class="alert alert-warning" role="alert">${L.escapeHtml(INSTALL_TEXT)}</div>`;
+  return installed ? '' : `<div class="alert alert-warning" role="alert">${installHtml()}</div>`;
 }
 function catBadges(c) {
   return L.couponCategories(c, catsById).map(cat =>
@@ -203,8 +205,8 @@ function renderHome() {
       </div>
     </div>
     <div class="alert alert-info mt-3" role="alert">${helpHtml()}</div>
-    ${installed ? '' : `<div class="alert alert-warning">${L.escapeHtml(INSTALL_TEXT)}</div>`}
-    <p class="text-muted small">App version: ${APP_VERSION}</p>`;
+    ${installed ? '' : `<div class="alert alert-warning">${installHtml()}</div>`}
+    <p class="text-muted small">App version: v${self.APP_VERSION}</p>`;
   $('#btnCoupons').onclick = () => goAnchor({ name: 'coupons' });
   $('#btnRuns').onclick = () => goAnchor({ name: 'runs' });
   $('#btnFetch').onclick = async () => { const m = $('#fetchMsg'); m.textContent = 'Fetching…'; try { await doFetch(true); m.textContent = fetchStatus; renderHome(); } catch (e) { m.textContent = (master ? 'Fetch failed — previous list kept. ' : 'Fetch failed — no list loaded yet. ') + e.message; updateNoListLock(); } };
@@ -428,7 +430,7 @@ function renderDetail() {
     : `<button class="btn btn-sm btn-outline-secondary" disabled title="No vpFREE2 link supplied by the curator for this venue">vpFREE2</button>`;
   let logging = '';
   if (view.from === 'run' && run && stop) {
-    if (!installed) logging = `<div class="alert alert-warning mt-3">${L.escapeHtml(INSTALL_TEXT)}</div>`;
+    if (!installed) logging = `<div class="alert alert-warning mt-3">${installHtml()}</div>`;
     else {
       const w = L.winLoss(stop.in, stop.out);
       logging = `<div class="card mt-3"><div class="card-body"><h2 class="h6">Log this stop</h2>
@@ -471,7 +473,7 @@ function renderDetail() {
 }
 function renderPersonalEdit() {
   const existing = view.couponId ? personal.find(p => p.id === view.couponId) : null;
-  if (!installed) { setHeader('Personal coupon', '', '←'); app.innerHTML = `<div class="alert alert-warning">${L.escapeHtml(INSTALL_TEXT)}</div>`; return; }
+  if (!installed) { setHeader('Personal coupon', '', '←'); app.innerHTML = `<div class="alert alert-warning">${installHtml()}</div>`; return; }
   // Fix C(1): no-list guard — never touch master.locations when there is
   // no list. The blocking modal covers this screen, but it must not throw.
   if (!L.hasMasterList(master)) { setHeader('Personal coupon', '', '←'); app.innerHTML = `<div class="alert alert-warning">No main list loaded yet. Use Retry in the blocking message to load it.</div>`; return; }

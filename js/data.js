@@ -26,4 +26,4 @@ export function isInstalled() {
   return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
     || window.navigator.standalone === true;
 }
-export const INSTALL_TEXT = 'This needs the installed app, because saved personal data (runs, logs, personal coupons) is only kept in the installed app. Install it on your phone: on iPhone, tap Share, then Add to Home Screen; on Android, tap Install, or Add to Home Screen, as offered by your browser. Then open the installed app — your main list will be the same.';
+export const INSTALL_TEXT = 'Some features need this web page to be installed as an app. Please follow the directions below if you would like to create custom runs or personal coupons.\niPhone: tap Share, then Add to Home Screen.\nAndroid: tap Install, or Add to Home Screen, as offered by your browser.\nThen open the installed app.';
