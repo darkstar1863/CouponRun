@@ -3,16 +3,16 @@
 // a blank expirationDate means ongoing, never expired for sorting/filtering.
 
 // Synthetic Personal category — APP-SIDE ONLY, never in master-list.json.
-// Personal coupons carry it so they can be filtered by category; the master
-// list itself has only the 9 curator categories. Display order 10 puts it
-// after every master category (orders 1-9). Colour #D63384 is distinct from
-// all master category colours.
+// Personal coupons carry it so they can be filtered by category; the main list
+// itself has only the 9 curator categories. Display order 10 puts it
+// after every main-list category (orders 1-9). Colour #D63384 is distinct from
+// all main-list category colours.
 export const PERSONAL_CATEGORY = { id: 'personal', title: 'Personal', shortTitle: 'P', color: '#D63384', displayOrder: 10 };
 export function withPersonalCategory(c) {
   if (!c) return c;
   return { ...c, categories: Array.from(new Set([...(c.categories || []), 'personal'])) };
 }
-// Filter-page category list: master categories (never duplicating a master
+// Filter-page category list: main-list categories (never duplicating a main-list
 // 'personal' if one ever appeared) plus the synthetic Personal category, sorted.
 export function allDisplayCategories(masterCategories) {
   const base = (masterCategories || []).filter(c => c.id !== 'personal');
@@ -26,7 +26,7 @@ export function dedupeCouponsById(list) {
   for (const c of list || []) { if (!seen.has(c.id)) { seen.add(c.id); out.push(c); } }
   return out;
 }
-// No-list guard: true only when a master list is actually present.
+// No-list guard: true only when a main list is actually present.
 export function hasMasterList(master) {
   return !!(master && Array.isArray(master.categories) && Array.isArray(master.locations));
 }
@@ -185,10 +185,10 @@ export function flattenMaster(data) {
   }
   return out;
 }
-// Minimal master-list validation (mirrors the schema's key rules).
+// Minimal main-list validation (mirrors the schema's key rules).
 export function validateMaster(data) {
   const errors = [];
-  if (!data || typeof data !== 'object') return ['master list is not an object'];
+  if (!data || typeof data !== 'object') return ['main list is not an object'];
   if (!Array.isArray(data.categories) || !data.categories.length) errors.push('no categories');
   if (!Array.isArray(data.locations)) errors.push('no locations');
   const locIds = new Set((data.locations || []).map(l => l.id));

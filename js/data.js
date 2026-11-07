@@ -1,4 +1,4 @@
-// Master-list acquisition: ONE fetch path (used by silent start fetch and
+// Main-list acquisition: ONE fetch path (used by silent start fetch and
 // by the explicit Fetch button). A failed fetch never erases the previous
 // list or personal data; a stale list stays usable.
 const CACHE = 'couponrun-master-v1';
@@ -26,4 +26,4 @@ export function isInstalled() {
   return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
     || window.navigator.standalone === true;
 }
-export const INSTALL_TEXT = 'This needs the installed app, because saved personal data (runs, logs, personal coupons) is only kept in the installed app. Install it on your phone: on iPhone, tap Share, then Add to Home Screen; on Android, tap Install, or Add to Home Screen, as offered by your browser. Then open the installed app — your master list will be the same.';
+export const INSTALL_TEXT = 'This needs the installed app, because saved personal data (runs, logs, personal coupons) is only kept in the installed app. Install it on your phone: on iPhone, tap Share, then Add to Home Screen; on Android, tap Install, or Add to Home Screen, as offered by your browser. Then open the installed app — your main list will be the same.';

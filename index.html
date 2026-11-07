@@ -31,13 +31,13 @@
   <div id="app"><p>Loading…</p></div>
   <noscript><p>Coupon Run needs JavaScript enabled.</p></noscript>
 </main>
-<!-- Blocking no-list lock (requirements §3.2): shown ONLY when no master list
+<!-- Blocking no-list lock (requirements §3.2): shown ONLY when no main list
      at all is present. It blocks the screen until a fetch succeeds; Retry
      re-attempts the fetch. It is outside #app so render() never wipes it. -->
 <div id="noListLock" class="app-overlay" style="display:none" role="alertdialog" aria-modal="true" aria-labelledby="noListTitle" aria-hidden="true">
   <div class="card lock-card"><div class="card-body">
-    <h2 class="h5" id="noListTitle">No master list loaded</h2>
-    <p>Coupon Run needs the master coupon list before it can show anything. Check your connection and try again — a previous list, if you had one, is never erased by a failed fetch.</p>
+    <h2 class="h5" id="noListTitle">No main list loaded</h2>
+    <p>Coupon Run needs the main coupon list before it can show anything. Check your connection and try again — a previous list, if you had one, is never erased by a failed fetch.</p>
     <p id="noListMsg" class="text-muted small"></p>
     <button class="btn btn-primary" id="noListRetry">Retry</button>
   </div></div>

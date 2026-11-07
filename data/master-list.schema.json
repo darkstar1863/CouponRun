@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://darkstar1863.github.io/CouponRun/data/master-list.schema.json",
-  "title": "Coupon Run master list",
+  "title": "Coupon Run main list",
   "description": "Validates data/master-list.json. vpFREE2 links are curator-supplied only, verified against vpFREE2 pages, never slug-guessed; a location without a verified page has vpfree2 null.",
   "type": "object",
   "required": [

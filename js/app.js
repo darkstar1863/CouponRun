@@ -2,6 +2,9 @@ import * as L from './logic.js';
 import { store, loadView, saveView, saveBack, loadBack, uid } from './store.js';
 import { fetchMaster, readCachedMaster, isInstalled, INSTALL_TEXT } from './data.js';
 
+// App version shown on the home page. Bump on every release.
+const APP_VERSION = '1.0.0';
+
 const HELP_TEXT = 'If gambling stops being fun, help is available, free and confidential, 24 hours a day. National Problem Gambling Helpline: call 1-800-522-4700 or 1-800-MY-RESET (1-800-697-3738), text 800GAM, or chat at ncpgambling.org/chat. Please gamble responsibly, and only with money you can afford to lose.';
 // Requirements §3.3: numbers are a proposal to be re-verified before release; wording above is verbatim from requirements.
 const DISCLAIMER = 'This coupon information is crowdsourced. It may change at any time, or may even be incorrect. The author is not liable for any discrepancies. Always confirm the offer at the venue before redeeming.';
@@ -14,7 +17,7 @@ let runs = [], personal = [];
 let installed = isInstalled();
 let view = { name: 'home' }; // {name, ...}
 let history = []; // in-app back stack (separate from Back-position restore)
-let lastFetchAt = null, lastFetchText = '', fetchStatus = '';
+let lastFetchAt = null, fetchStatus = '';
 let mapObj = null, mapMarkers = null, userMarker = null;
 let focusInOutOnDetail = false;
 
@@ -75,11 +78,11 @@ function cardHtml(c, ctx) {
       : `<button class="btn btn-sm btn-primary" data-act="add" data-id="${c.id}">Add to run</button>`;
   } else if (ctx.mode === 'browse') {
     if (c.isPersonal) action = `<button class="btn btn-sm btn-outline-secondary" data-act="edit-personal" data-id="${c.id}" aria-label="Edit personal coupon">✎ Edit</button>`;
-    else action = ''; // Action area reserved / blank for master coupons in browse, per spec.
+    else action = ''; // Action area reserved / blank for main coupons in browse, per spec.
   }
   return `<article class="card coupon-card mb-2 ${exp ? 'expired-card' : ''}" data-open="${c.id}" id="coupon-${c.id}">
     <div class="card-body">
-      <div class="d-flex flex-wrap gap-1 mb-1">${catBadges(c)} ${expiredMark(c)} ${c.removed ? '<span class="badge text-bg-warning">REMOVED from master list</span>' : ''} ${c.isPersonal ? '<span class="badge text-bg-info">Personal</span>' : ''}</div>
+      <div class="d-flex flex-wrap gap-1 mb-1">${catBadges(c)} ${expiredMark(c)} ${c.removed ? '<span class="badge text-bg-warning">REMOVED from main list</span>' : ''} ${c.isPersonal ? '<span class="badge text-bg-info">Personal</span>' : ''}</div>
       <h3 class="h6 mb-1">${L.escapeHtml(c.title)}</h3>
       <div class="text-muted small">${L.escapeHtml(c.bookShortTitle || 'Personal')} · ${L.escapeHtml(locTitle(c))}</div>
       ${action ? `<div class="mt-2 action-area" data-action-area="${c.id}">${action}</div>` : '<div class="mt-2 action-area"></div>'}
@@ -158,7 +161,7 @@ function openDetail(id, fromCtx) {
 function render(isBack = false) {
   $('#fetchBanner').textContent = fetchStatus;
   // No-list lock is evaluated on every render so it can only ever appear
-  // when master === null and disappears the moment a fetch succeeds.
+  // when main list === null and disappears the moment a fetch succeeds.
   updateNoListLock();
   switch (view.name) {
     case 'home': renderHome(); break;
@@ -175,17 +178,30 @@ function render(isBack = false) {
 }
 function renderHome() {
   setHeader('Coupon Run', '');
+  // Main-list card (per sketch): relative times only. Updated = curator
+  // date from the list itself; Synced = last fetch on this phone.
+  // curatorUpdatedAt is a date string (e.g. 2026-11-01); if it cannot be
+  // parsed, show it as-is; if there is no list yet, show '—' / 'never'.
+  const updatedTs = master && master.curatorUpdatedAt ? Date.parse(master.curatorUpdatedAt) : NaN;
+  const updated = Number.isNaN(updatedTs) ? (master && master.curatorUpdatedAt ? L.escapeHtml(String(master.curatorUpdatedAt)) : '—') : L.timeSince(updatedTs);
+  const synced = lastFetchAt ? L.timeSince(lastFetchAt) : 'never';
   app.innerHTML = `
     <div class="d-grid gap-3">
       <button class="btn btn-primary btn-lg" id="btnCoupons">Coupons</button>
       <button class="btn btn-primary btn-lg" id="btnRuns">Runs</button>
     </div>
-    <p class="mt-3">Master list: ${master ? `${coupons.length} coupons` : 'not loaded yet'} · Last fetch: ${lastFetchAt ? L.timeSince(lastFetchAt) : 'never'} (${lastFetchAt ? new Date(lastFetchAt).toLocaleString() : '—'}) · Curator updated: ${master ? L.escapeHtml(String(master.curatorUpdatedAt || '—')) : '—'}</p>
-    <button class="btn btn-outline-secondary" id="btnFetch">Fetch master list</button>
-    <span id="fetchMsg" class="ms-2 text-muted"></span>
+    <div class="card mt-3">
+      <div class="card-body">
+        <h2 class="h6 card-title">Main list</h2>
+        <p class="card-text mb-1">Updated: ${updated}</p>
+        <p class="card-text mb-3">Synced: ${synced}</p>
+        <button class="btn btn-outline-secondary" id="btnFetch">Sync main list</button>
+        <span id="fetchMsg" class="ms-2 text-muted"></span>
+      </div>
+    </div>
     <div class="alert alert-info mt-3" role="alert">${L.escapeHtml(HELP_TEXT)}</div>
     ${installed ? '' : `<div class="alert alert-warning">${L.escapeHtml(INSTALL_TEXT)}</div>`}
-    <p class="text-muted small">Installed mode: ${installed ? 'yes' : 'no (web mode — browsing only)'}.</p>`;
+    <p class="text-muted small">App version: ${APP_VERSION}</p>`;
   $('#btnCoupons').onclick = () => goAnchor({ name: 'coupons' });
   $('#btnRuns').onclick = () => goAnchor({ name: 'runs' });
   $('#btnFetch').onclick = async () => { const m = $('#fetchMsg'); m.textContent = 'Fetching…'; try { await doFetch(true); m.textContent = fetchStatus; renderHome(); } catch (e) { m.textContent = (master ? 'Fetch failed — previous list kept. ' : 'Fetch failed — no list loaded yet. ') + e.message; updateNoListLock(); } };
@@ -327,14 +343,14 @@ function renderRunEdit() {
     // static to Runs, and its children push Run themselves if needed).
     store.put('runs', run).then(() => goAnchor({ name: 'run', runId: run.id }));
   };
-  $('#hdrDelete').onclick = () => { if (confirm(`Delete run "${run.name}"? Its stops and logs for this run will be deleted. Master and personal coupons are not deleted.`)) store.del('runs', run.id).then(() => { runs = runs.filter(r => r.id !== run.id); goAnchor({ name: 'runs' }); }); };
+  $('#hdrDelete').onclick = () => { if (confirm(`Delete run "${run.name}"? Its stops and logs for this run will be deleted. Main and personal coupons are not deleted.`)) store.del('runs', run.id).then(() => { runs = runs.filter(r => r.id !== run.id); goAnchor({ name: 'runs' }); }); };
 }
 function renderFilter() {
   const ctx = view.ctx;
   // Fix C(1): no-list guard — never touch master.categories when there is
   // no list. The blocking modal (updateNoListLock) covers this screen, but
   // the view itself must not throw if reached.
-  if (!L.hasMasterList(master)) { setHeader('Filter', '', '←'); app.innerHTML = `<div class="alert alert-warning">No master list loaded yet. Use Retry in the blocking message to load it.</div>`; return; }
+  if (!L.hasMasterList(master)) { setHeader('Filter', '', '←'); app.innerHTML = `<div class="alert alert-warning">No main list loaded yet. Use Retry in the blocking message to load it.</div>`; return; }
   const filter = getFilter(ctx);
   const draft = JSON.parse(JSON.stringify(filter));
   // "< Apply" is the Back button for this screen; Cancel is separate.
@@ -421,10 +437,10 @@ function renderDetail() {
         </div></div>`;
     }
   }
-  app.innerHTML = `<div class="d-flex flex-wrap gap-1 mb-2">${catBadges(c)} ${expiredMark(c)} ${c.isPersonal ? '<span class="badge text-bg-info">Personal coupon</span>' : '<span class="badge text-bg-secondary">Master coupon</span>'}</div>
+  app.innerHTML = `<div class="d-flex flex-wrap gap-1 mb-2">${catBadges(c)} ${expiredMark(c)} ${c.isPersonal ? '<span class="badge text-bg-info">Personal coupon</span>' : '<span class="badge text-bg-secondary">Main coupon</span>'}</div>
     <h2 class="h5">${L.escapeHtml(c.title)}</h2>
     <p><strong>Venue:</strong> ${L.escapeHtml(locTitle(c))}<br><strong>Book:</strong> ${L.escapeHtml(c.bookShortTitle || 'Personal')}<br>
-    <strong>Start:</strong> ${c.startDate || 'Not given'}<br><strong>Expires:</strong> ${c.expirationDate || 'Ongoing until removed from the master list'}${exp ? ' — EXPIRED' : ''}</p>
+    <strong>Start:</strong> ${c.startDate || 'Not given'}<br><strong>Expires:</strong> ${c.expirationDate || 'Ongoing until removed from the main list'}${exp ? ' — EXPIRED' : ''}</p>
     <div>${L.linkify(c.description || '')}</div>
     ${c.extra ? `<p class="mt-2"><strong>Extra:</strong> ${L.linkify(c.extra)}</p>` : ''}
     <p><strong>Source:</strong> ${L.escapeHtml(c.source || '')} ${c.sourceUrl ? `<a href="${L.escapeHtml(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">Evidence link (opens outside the app)</a>` : ''}</p>
@@ -454,7 +470,7 @@ function renderPersonalEdit() {
   if (!installed) { setHeader('Personal coupon', '', '←'); app.innerHTML = `<div class="alert alert-warning">${L.escapeHtml(INSTALL_TEXT)}</div>`; return; }
   // Fix C(1): no-list guard — never touch master.locations when there is
   // no list. The blocking modal covers this screen, but it must not throw.
-  if (!L.hasMasterList(master)) { setHeader('Personal coupon', '', '←'); app.innerHTML = `<div class="alert alert-warning">No master list loaded yet. Use Retry in the blocking message to load it.</div>`; return; }
+  if (!L.hasMasterList(master)) { setHeader('Personal coupon', '', '←'); app.innerHTML = `<div class="alert alert-warning">No main list loaded yet. Use Retry in the blocking message to load it.</div>`; return; }
   setHeader(existing ? 'Edit personal coupon' : 'Add personal coupon', `<button class="btn btn-sm btn-outline-secondary" id="hdrCancelP">Cancel</button> ${existing ? '<button class="btn btn-sm btn-outline-danger" id="hdrDelP">Delete</button>' : ''}`, '< Save');
   // Personal category is synthetic and always attached at save/load, so it
   // is deliberately NOT offered as a checkbox here — the user picks real
@@ -690,15 +706,15 @@ async function doFetch(explicit) {
   try {
     const { data, text } = await fetchMaster();
     const errs = L.validateMaster(data);
-    if (errs.length) throw new Error('Master list failed validation: ' + errs.slice(0, 3).join('; '));
+    if (errs.length) throw new Error('Main list failed validation: ' + errs.slice(0, 3).join('; '));
     const changed = prevText !== text;
     master = data; books = data.books || [];
     setCatsFromMaster(data);
     locsById = {}; data.locations.forEach(l => locsById[l.id] = l);
     coupons = L.flattenMaster(data);
-    lastFetchAt = Date.now(); lastFetchText = new Date(lastFetchAt).toLocaleString();
-    fetchStatus = explicit ? (changed ? 'Master list updated.' : 'Already up to date.') : (changed ? 'Master list updated in background.' : '');
-    // Personal coupons keep their own ids; runs keep stops by coupon id, so a master update never erases personal data.
+    lastFetchAt = Date.now();
+    fetchStatus = explicit ? (changed ? 'Main list updated.' : 'Already up to date.') : '';
+    // Personal coupons keep their own ids; runs keep stops by coupon id, so a main-list update never erases personal data.
     // A failed fetch (catch below) never assigns master/coupons, so it
     // never erases a previous list or personal data.
     updateNoListLock();
@@ -722,7 +738,7 @@ async function boot() {
   // Personal coupons are regular coupons in browse: merge them into the
   // browse list (they keep isPersonal/bookId 'personal', plus the synthetic
   // Personal category from normalizePersonal). The doFetch wrapper below
-  // re-applies this merge after a fresh master fetch.
+  // re-applies this merge after a fresh main-list fetch.
   coupons = L.dedupeCouponsById([...coupons, ...personal.map(p => ({ ...p }))]);
   render();
   // Silent, non-blocking fetch on every start.
@@ -733,7 +749,7 @@ async function boot() {
 const _doFetch = doFetch;
 doFetch = async (explicit) => {
   const r = await _doFetch(explicit);
-  // Re-merge personal coupons that a fresh master fetch would otherwise drop.
+  // Re-merge personal coupons that a fresh main-list fetch would otherwise drop.
   const masterIds = new Set(coupons.filter(c => !c.isPersonal).map(c => c.id));
   coupons = L.dedupeCouponsById([...coupons.filter(c => !c.isPersonal), ...normalizePersonal(personal).filter(p => !masterIds.has(p.id))]);
   personal = normalizePersonal(personal);
