@@ -5,8 +5,11 @@ import { fetchMaster, readCachedMaster, isInstalled, INSTALL_TEXT } from './data
 // App version shown on the home page. Bump on every release.
 const APP_VERSION = '1.0.0';
 
-const HELP_TEXT = 'If gambling stops being fun, help is available, free and confidential, 24 hours a day. National Problem Gambling Helpline: call 1-800-522-4700 or 1-800-MY-RESET (1-800-697-3738), text 800GAM, or chat at ncpgambling.org/chat. Please gamble responsibly, and only with money you can afford to lose.';
-// Requirements §3.3: numbers are a proposal to be re-verified before release; wording above is verbatim from requirements.
+// Gambling-problem notice, verbatim as supplied by the curator (2026-11-07).
+// Shown on the home page and below the Disclaimer in coupon detail.
+const HELP_TEXT = 'Please gamble responsibly, and only with money you can afford to lose.\nGambling Problem? Call 1-800-GAMBLER.';
+// Render the two lines with a line break (escapeHtml alone would collapse the newline).
+const helpHtml = () => L.escapeHtml(HELP_TEXT).replace(/\n/g, '<br>');
 const DISCLAIMER = 'This coupon information is crowdsourced. It may change at any time, or may even be incorrect. The author is not liable for any discrepancies. Always confirm the offer at the venue before redeeming.';
 // Requirements UC3 asks for a disclaimer to that effect; final legal wording is an open question (requirements §11), so this plain wording is labelled as such in the detail view note.
 
@@ -199,7 +202,7 @@ function renderHome() {
         <span id="fetchMsg" class="ms-2 text-muted"></span>
       </div>
     </div>
-    <div class="alert alert-info mt-3" role="alert">${L.escapeHtml(HELP_TEXT)}</div>
+    <div class="alert alert-info mt-3" role="alert">${helpHtml()}</div>
     ${installed ? '' : `<div class="alert alert-warning">${L.escapeHtml(INSTALL_TEXT)}</div>`}
     <p class="text-muted small">App version: ${APP_VERSION}</p>`;
   $('#btnCoupons').onclick = () => goAnchor({ name: 'coupons' });
@@ -447,6 +450,7 @@ function renderDetail() {
     <p><strong>In runs:</strong> ${inRuns.length ? L.escapeHtml(inRuns.join(', ')) : 'None'}</p>
     <p>${mapsBtns} ${vpfree}</p>
     <div class="alert alert-secondary small" role="note">${L.escapeHtml(DISCLAIMER)} <em>Final legal wording is still an open question in the requirements; this plain wording is used until the curator supplies it.</em></div>
+    <div class="alert alert-info small mt-2" role="note">${helpHtml()}</div>
     ${logging}
     ${c.isPersonal ? `<div class="mt-3"><button class="btn btn-sm btn-outline-danger" id="delPersonal">Delete</button></div>` : ''}`;
   $('#hdrEditP')?.addEventListener('click', () => go({ name: 'personalEdit', couponId: c.id }));
