@@ -1,7 +1,8 @@
 // Coupon Run service worker. App-shell cache only.
 // Updates only when this file's bytes change (browser re-installs on change).
 // RULE: bump SHELL on every app-code change (index.html, css/, js/,
-// manifest.webmanifest, assets/icons/). Installed phones will NOT get
+// manifest.webmanifest, assets/icons/ — including adding a new icon
+// file to SHELL_FILES. Installed phones will NOT get
 // new app code otherwise: the browser only installs a new worker when
 // sw.js changes, and the fetch handler below is cache-first for the
 // shell. A data-only master-list change does NOT need a SHELL bump,
@@ -12,8 +13,8 @@
 // are untouched by every handler here. The master-list cache
 // (couponrun-master-v1, owned by js/data.js) is also untouched: activate
 // only deletes couponrun-shell-* caches.
-const SHELL = 'couponrun-shell-v2';
-const SHELL_FILES = ['./', './index.html', './css/app.css', './js/app.js', './js/logic.js', './js/store.js', './js/data.js', './manifest.webmanifest', './assets/icons/icon-512.png', './assets/icons/icon.svg'];
+const SHELL = 'couponrun-shell-v3';
+const SHELL_FILES = ['./', './index.html', './css/app.css', './js/app.js', './js/logic.js', './js/store.js', './js/data.js', './manifest.webmanifest', './assets/icons/icon-512.png', './assets/icons/icon-rc-512.png', './assets/icons/icon.svg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(SHELL).then(c => c.addAll(SHELL_FILES).catch(() => {})).then(() => self.skipWaiting()));
 });
